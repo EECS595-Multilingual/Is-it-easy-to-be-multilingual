@@ -87,7 +87,7 @@ def remove_qa_test_annotations(test_dir):
               assert context[a_start:a_end] == a_text
             new_data.append({'paragraphs': [{
                 'context': context,
-                'qas': [{'answers': [{'answer_start': 0, 'text': ''}],
+                'qas': [{'answers': [{'answer_start': answer['answer_start'], 'text': answer['text']}],
                          'question': question,
                          'id': question_id}]}]})
     with open(test_file, 'w') as f:
