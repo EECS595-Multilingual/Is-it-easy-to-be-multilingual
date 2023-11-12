@@ -53,6 +53,7 @@ def read_data(path):
                 sentence=[]
                 tags.append(sent_tag)
                 sent_tag=[]
+                continue
             words = line.strip().split()
             sent_tag.append(words[1])
             sentence.append(words[0].split(":")[1])
@@ -63,11 +64,12 @@ def read_data(path):
 
 
 def preprocess_function(sentences,tags):
+    max_length = max(len(sentence) for sentence in sentences)
     inputs = tokenizer(
         sentences,
         padding=True,
         truncation=True,
-        max_length=200,
+        max_length=max_length,
         is_split_into_words=True,
         return_tensors="pt",
     )
@@ -81,7 +83,7 @@ def preprocess_function(sentences,tags):
                 label_map[tag]=len(label_map)
     numerical_labels = [[label_map[tag] for tag in sentence] for sentence in tags]
 
-    padded_labels = [torch.nn.functional.pad(torch.tensor(labels),(0,200-len(labels)),value=-100) for labels in numerical_labels]
+    padded_labels = [torch.nn.functional.pad(torch.tensor(labels),(0,max_length-len(labels)),value=-100) for labels in numerical_labels]
 
     return TensorDataset(input_ids, attention_mask, torch.stack(padded_labels)), len(label_map)+1
 
@@ -99,11 +101,13 @@ for S in S_lang2file.keys():
         s_sent,s_tag = read_data(s_path)
         t_sent,t_tag = read_data(t_path)
 
-        tokenized_s_data = preprocess_function(s_sent,s_tag)
-        tokenized_t_data = preprocess_function(t_sent,t_tag)
+        tokenized_s_data,num_class = preprocess_function(s_sent,s_tag)
+        tokenized_t_data,_ = preprocess_function(t_sent,t_tag)
         data_collator = DefaultDataCollator()
         model.config.num_labels=num_class
         model.classifier = torch.nn.Linear(model.config.hidden_size,num_class)
+        model = AutoModelForTokenClassification.from_pretrained("bert-base-multilingual-uncased", num_labels=num_class)
+
         # TRAIN
         train_dataloader = DataLoader(tokenized_s_data, batch_size=32, shuffle=True)
         optimizer = AdamW(model.parameters(), lr=1e-5)
@@ -130,7 +134,7 @@ for S in S_lang2file.keys():
                 loss = outputs.loss
                 total_loss += loss.item()
                 # Get predicted labels
-                pred_labels = torch.argmax(outputs.logits, dim=1)
+                pred_labels = torch.argmax(outputs.logits, dim=2)
 
                 # Calculate accuracy
                 correct = (pred_labels == labels).sum().item()
@@ -161,7 +165,7 @@ for S in S_lang2file.keys():
                     labels=labels
                 )
                 # Get predicted labels
-                pred_labels = torch.argmax(outputs.logits, dim=1)
+                pred_labels = torch.argmax(outputs.logits, dim=2)
 
                 # Calculate accuracy
                 correct = (pred_labels == labels).sum().item()
