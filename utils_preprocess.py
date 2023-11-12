@@ -17,6 +17,30 @@ TOKENIZERS = {
   'xlmr': XLMRobertaTokenizer,
 }
 
+def panx_preprocess(args):
+  def _process_one_file(infile, outfile):
+    with open(infile, 'r+') as fin, open(outfile, 'w+') as fout:
+      for l in fin:
+        items = l.strip().split('\t')
+        if len(items) == 2:
+          label = items[1].strip()
+          token = items[0].split(':')[1].strip()
+          if 'test' in infile:
+            fout.write(f'{token}\n')
+          else:
+            fout.write(f'{token}\t{label}\n')
+        else:
+          fout.write('\n')
+  if not os.path.exists(args.output_dir):
+    os.makedirs(args.output_dir)
+  if not os.path.exists(args.data_dir):
+    os.makedirs(args.data_dir)
+  langs = 'en fi ar bn id ko ru sw te'.split(' ')
+  for lg in langs:
+    for split in ['train', 'test', 'dev']:
+      infile = os.path.join(args.data_dir, f'{lg}-{split}')
+      outfile = os.path.join(args.output_dir, f'{split}-{lg}.tsv')
+      _process_one_file(infile, outfile)
 
 def tydiqa_preprocess(args):
   LANG2ISO = {'arabic': 'ar', 'bengali': 'bn', 'english': 'en', 'finnish': 'fi',
@@ -125,3 +149,5 @@ if __name__ == "__main__":
 
   if args.task == 'tydiqa':
     tydiqa_preprocess(args)
+  if args.task == 'panx':
+    panx_preprocess(args)
