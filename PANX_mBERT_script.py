@@ -64,6 +64,7 @@ def read_data(path):
 
 
 def preprocess_function(sentences,tags):
+
     max_length = max(len(sentence) for sentence in sentences)
     inputs = tokenizer(
         sentences,
@@ -92,17 +93,21 @@ def preprocess_function(sentences,tags):
 
 
 ### To run it all at once  -
+def run_everything():
+    tokenizer = AutoTokenizer.from_pretrained('bert-base-multilingual-uncased')
+    model = AutoModelForTokenClassification.from_pretrained("bert-base-multilingual-uncased")
+    SHOT = 0 # 0-shot or few-shot
 
-for S in S_lang2file.keys():
-    for T in T_lang2file.keys():
+    for S in S_lang2file.keys():
+    
 
         s_path = path + S_lang2file[S]
-        t_path = path +  T_lang2file[T]
+
         s_sent,s_tag = read_data(s_path)
-        t_sent,t_tag = read_data(t_path)
+
 
         tokenized_s_data,num_class = preprocess_function(s_sent,s_tag)
-        tokenized_t_data,_ = preprocess_function(t_sent,t_tag)
+
         data_collator = DefaultDataCollator()
         model.config.num_labels=num_class
         model.classifier = torch.nn.Linear(model.config.hidden_size,num_class)
@@ -146,33 +151,37 @@ for S in S_lang2file.keys():
             accuracy = total_correct / total_samples
             print(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {average_loss}, Training Accuracy: {accuracy}")
 
-
-        # TEST
-        test_dataloader = DataLoader(tokenized_t_data, batch_size=32)
         model.eval()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        total_correct = 0
-        total_samples = 0
-        with torch.no_grad():
-            for batch in tqdm(test_dataloader):
-                input_ids = batch[0].to(device)
-                attention_mask = batch[1].to(device)
-                labels = batch[2].to(device)
-                outputs = model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    labels=labels
-                )
-                # Get predicted labels
-                pred_labels = torch.argmax(outputs.logits, dim=2)
+        for T in T_lang2file.keys():
+            t_path = path +  T_lang2file[T]
+            t_sent,t_tag = read_data(t_path)
+            tokenized_t_data,_ = preprocess_function(t_sent,t_tag)
+            # TEST
+            test_dataloader = DataLoader(tokenized_t_data, batch_size=32)
+            
+            total_correct = 0
+            total_samples = 0
+            with torch.no_grad():
+                for batch in tqdm(test_dataloader):
+                    input_ids = batch[0].to(device)
+                    attention_mask = batch[1].to(device)
+                    labels = batch[2].to(device)
+                    outputs = model(
+                        input_ids=input_ids,
+                        attention_mask=attention_mask,
+                        labels=labels
+                    )
+                    # Get predicted labels
+                    pred_labels = torch.argmax(outputs.logits, dim=2)
 
-                # Calculate accuracy
-                correct = (pred_labels == labels).sum().item()
-                total_correct += correct
-                total_samples += labels.numel() - (labels== -100).sum().item() 
-        accuracy = total_correct / total_samples
-        print(f"Testing Accuracy: {accuracy}")
+                    # Calculate accuracy
+                    correct = (pred_labels == labels).sum().item()
+                    total_correct += correct
+                    total_samples += labels.numel() - (labels== -100).sum().item() 
+            accuracy = total_correct / total_samples
+            print(f"Testing Accuracy: {accuracy}")
 
 
-        accuracy_dict[(S,T,SHOT)] = accuracy
+            accuracy_dict[(S,T,SHOT)] = accuracy
+    print(accuracy_dict)
+run_everything()
