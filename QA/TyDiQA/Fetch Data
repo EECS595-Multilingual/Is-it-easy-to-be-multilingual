@@ -1,0 +1,7 @@
+Navigate to the folder where you want to store the data.
+Run : 
+
+  bash TyDiQA_data_DL.sh
+
+This will store the GoldP dataset into separate folders for Training and Testing.
+Each of the Training and Testing Folders would contain separate files for each language.
