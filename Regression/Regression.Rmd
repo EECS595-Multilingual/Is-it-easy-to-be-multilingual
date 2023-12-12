@@ -1,0 +1,173 @@
+---
+title: "EECS 595 | Is it Easy to be Multilingual | Regression Models"
+author: "Rishikesh Ksheersagar & Karan Anand"
+output: 
+  html_notebook:
+    fig_width : 2
+    fig_height : 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(pls)
+library(MASS)
+library(lars)
+library(palmerpenguins)
+```
+
+
+```{r}
+qa <- read.csv("/Users/rishikesh/Desktop/Project/QA_Regression.csv")
+qa
+```
+
+```{r}
+lmod <- lm(S_t ~ syn+phon+morph+lex+LM+S_s, data = qa)
+summary(lmod)
+```
+
+
+
+```{r}
+set.seed(123)
+par(mfrow=c(1,2))
+trainy = qa$S_t
+trainx = as.matrix(qa[4:9])
+cvout <- cv.lars(trainx, trainy, K=9)
+cvout$index[which.min(cvout$cv)]
+mod6 <- lars(trainx, trainy)
+plot(mod6)
+```
+
+##### Writing a function for RMSE
+```{r}
+rmse = function(x, y){
+  sqrt( mean( (x-y) ^ 2 ) )
+  }
+```
+
+
+```{r}
+summary(mod6)
+mod6$beta
+```
+
+
+
+```{r}
+fitlars <- predict(mod6, trainx, s=0.7878788, mode= "fraction")
+rmse(fitlars$fit, qa$S_t)
+```
+
+```{r}
+a = 0
+b = 0
+for (i in 0:8){
+  lb = 8*i+1
+  ub = 8*(i+1)
+  f <- fitlars$fit[lb : ub]
+  t <- qa$S_t[lb : ub]
+  if (which.max(f) == which.max(t)){
+    a = a+1
+  }
+  else{
+    f1 <- f[f < max(f)]
+    t1 <- t[t < max(t)]
+    if (which.max(f1) == which.max(t1)){
+      b = b+1
+    }
+  }
+}
+
+print((a+b)*100/8)
+```
+
+
+
+```{r}
+sink("output.csv")
+print(fitlars$fit)
+sink()
+```
+
+
+## NER
+
+
+
+```{r}
+ner <- read.csv("/Users/rishikesh/Desktop/Project/NER_Regression.csv")
+ner
+```
+
+```{r}
+lmod <- lm(S_t ~ syn+phon+morph+lex+LM+S_s, data = ner)
+summary(lmod)
+```
+
+
+
+```{r}
+set.seed(123)
+par(mfrow=c(1,2))
+trainy = ner$S_t
+trainx = as.matrix(qa[4:9])
+cvout <- cv.lars(trainx, trainy, K=9)
+cvout$index[which.min(cvout$cv)]
+mod6 <- lars(trainx, trainy)
+plot(mod6)
+```
+
+
+
+
+```{r}
+summary(mod6)
+mod6$beta
+```
+
+
+
+```{r}
+fitlars <- predict(mod6, trainx, s=0.7878788, mode= "fraction")
+rmse(fitlars$fit, ner$S_t)
+```
+
+```{r}
+a = 0
+b = 0
+for (i in 0:8){
+  lb = 8*i+1
+  ub = 8*(i+1)
+  f <- fitlars$fit[lb : ub]
+  t <- ner$S_t[lb : ub]
+  if (which.max(f) == which.max(t)){
+    a = a+1
+  }
+  else{
+    f1 <- f[f < max(f)]
+    t1 <- t[t < max(t)]
+    if (which.max(f1) == which.max(t1)){
+      b = b+1
+    }
+  }
+}
+
+print((a+b)*100/8)
+```
+
+
+
+```{r}
+sink("output_ner.csv")
+print(fitlars$fit)
+sink()
+```
+
+
+
+
