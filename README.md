@@ -5,7 +5,7 @@
 ###### QA_script contains the code necessary to fine-tune and test the mBERT model.
 
 ### Named Entity Recognition
-#####3 PANX_NER_data_DL.sh can be used to download the PANX dataset and extract necessary files
+###### PANX_NER_data_DL.sh can be used to download the PANX dataset and extract necessary files
 ###### PANX_mBERT_script.py contains the code to fine-tune and test the mBERT model
 
 ##### myjob.sh contains the slurm job to run the tasks on Great Lakes HPC
