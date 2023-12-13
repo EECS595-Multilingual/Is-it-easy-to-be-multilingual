@@ -5,7 +5,7 @@
     
 ### Question Answering
 ###### TyDiQA_data_DL.sh can be used to download the TyDiQA secondary (GoldP task) dataset.
-###### QA_script contains the code necessary to fine-tune and test the mBERT model.
+###### QA_script.py contains the code necessary to fine-tune and test the mBERT model.
 
 ### Named Entity Recognition
 ###### PANX_NER_data_DL.sh can be used to download the PANX dataset and extract necessary files.
